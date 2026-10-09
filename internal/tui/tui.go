@@ -33,6 +33,7 @@ import (
 
 	"github.com/gowtham-sai-yadav/entangle/internal/agent"
 	_ "github.com/gowtham-sai-yadav/entangle/internal/agent/claudecode" // registers the Claude Code provider
+	_ "github.com/gowtham-sai-yadav/entangle/internal/agent/cline"      // registers the Cline provider
 	_ "github.com/gowtham-sai-yadav/entangle/internal/agent/codex"      // registers the Codex CLI provider
 	_ "github.com/gowtham-sai-yadav/entangle/internal/agent/opencode"   // registers the opencode provider
 	"github.com/gowtham-sai-yadav/entangle/internal/agentshare"

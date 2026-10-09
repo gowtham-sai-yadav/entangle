@@ -19,6 +19,7 @@ import (
 
 	"github.com/gowtham-sai-yadav/entangle/internal/agent"
 	_ "github.com/gowtham-sai-yadav/entangle/internal/agent/claudecode" // registers the Claude Code provider
+	_ "github.com/gowtham-sai-yadav/entangle/internal/agent/cline"      // registers the Cline provider
 	_ "github.com/gowtham-sai-yadav/entangle/internal/agent/codex"      // registers the Codex CLI provider
 	_ "github.com/gowtham-sai-yadav/entangle/internal/agent/opencode"   // registers the opencode provider
 	"github.com/gowtham-sai-yadav/entangle/internal/agentshare"
@@ -172,14 +173,14 @@ func printHelp() {
 		"  entangle import  <bundle> [--dry-run] [--map OLD=NEW]... [--project P]... [--target-os OS] [--overwrite] [--deep] [--yes]\n" +
 		"  entangle inspect <bundle>\n" +
 		"  entangle verify  [--config-dir DIR]\n" +
-		"  entangle sessions [--tool all|claude-code|codex|opencode] [--project P] [--config-dir DIR] [--json]\n" +
+		"  entangle sessions [--tool all|claude-code|codex|opencode|kilo|cline] [--project P] [--config-dir DIR] [--json]\n" +
 		"  entangle share   <session-id-prefix | --last> [--tool T] [--project P] [--out FILE] [--with-context] [--no-redact] [--yes]\n" +
 		"  entangle send    <session-id-prefix | --last> [--tool T] [--project P] [--with-context] [--no-redact] [--yes]\n" +
 		"  entangle receive <code> [--config-dir DIR] [--map OLD=NEW]... [--yes]\n" +
 		"  entangle update  [--check] [--yes]\n" +
 		"  entangle gui     [bundle] [--port N]\n\n" +
 		"SESSIONS, SHARE and SEND cover every coding agent on this machine by default -\n" +
-		"Claude Code, Codex and opencode together. Paste an id from the list into SHARE\n" +
+		"Claude Code, Codex, opencode, Kilo Code and Cline together. Paste an id from the list into SHARE\n" +
 		"or SEND and the right tool is worked out for you; --tool narrows the list when\n" +
 		"you want only one. IMPORT and RECEIVE read whichever tool a bundle came from.\n" +
 		"EXPORT and VERIFY are Claude Code only for now: they move and check a whole\n" +

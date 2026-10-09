@@ -32,6 +32,8 @@ const (
 	ClaudeCode ID = "claude-code"
 	Codex      ID = "codex"
 	OpenCode   ID = "opencode"
+	Kilo       ID = "kilo"
+	Cline      ID = "cline"
 )
 
 // Roots is where one tool keeps its data on this machine. Tool-specific

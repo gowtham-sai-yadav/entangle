@@ -23,33 +23,29 @@ import (
 // solve for Claude Code, and here the tool does it for us, provided the import is
 // run from the directory the session should belong to.
 
-const bundlePrefix = "agents/opencode/"
-
-const sessionEntry = bundlePrefix + "session.json"
-
 // BundlePrefix implements agent.Sharer.
-func (Provider) BundlePrefix() string { return bundlePrefix }
+func (p Provider) BundlePrefix() string { return p.variant().prefix }
 
 // Pack exports one session through the opencode CLI and scrubs the result.
-func (Provider) Pack(r agent.Roots, s agent.Session, opts agent.PackOptions) (*agent.Packed, error) {
+func (p Provider) Pack(r agent.Roots, s agent.Session, opts agent.PackOptions) (*agent.Packed, error) {
 	bin := r.Get(KeyBinary)
 	if bin == "" {
-		return nil, errors.New("opencode is not installed on this machine")
+		return nil, errors.New(p.DisplayName() + " is not installed on this machine")
 	}
 	// Its own --sanitize is deliberately not used: it replaces whole fields with
 	// placeholders, which would strip the conversation the receiver needs. Our
 	// scrubbing masks only what looks like a secret and leaves the text intact.
 	raw, err := runCmd(bin, "export", s.ID)
 	if err != nil {
-		return nil, fmt.Errorf("opencode export: %w", err)
+		return nil, fmt.Errorf("%s export: %w", p.DisplayName(), err)
 	}
 	raw = []byte(strings.TrimSpace(string(raw)))
 	if len(raw) == 0 {
-		return nil, fmt.Errorf("opencode exported nothing for session %s", s.ShortID)
+		return nil, fmt.Errorf("%s exported nothing for session %s", p.DisplayName(), s.ShortID)
 	}
 	// Fail here rather than hand a teammate something their opencode will reject.
 	if !json.Valid(raw) {
-		return nil, errors.New("opencode export did not return JSON (its export format may have changed)")
+		return nil, fmt.Errorf("%s export did not return JSON (its export format may have changed)", p.DisplayName())
 	}
 
 	masked := 0
@@ -63,7 +59,7 @@ func (Provider) Pack(r agent.Roots, s agent.Session, opts agent.PackOptions) (*a
 	}
 
 	return &agent.Packed{
-		Entries: []agent.Entry{{Name: sessionEntry, Data: raw}},
+		Entries: []agent.Entry{{Name: p.BundlePrefix() + "session.json", Data: raw}},
 		Preview: agent.Preview{
 			Title:         s.Title,
 			ShortID:       s.ShortID,
@@ -77,10 +73,10 @@ func (Provider) Pack(r agent.Roots, s agent.Session, opts agent.PackOptions) (*a
 
 // Unpack hands the session to `opencode import`, run from targetDir so opencode
 // binds it to the project the receiver is standing in.
-func (Provider) Unpack(r agent.Roots, entries []agent.Entry, targetDir string) (*agent.Unpacked, error) {
+func (p Provider) Unpack(r agent.Roots, entries []agent.Entry, targetDir string) (*agent.Unpacked, error) {
 	bin := r.Get(KeyBinary)
 	if bin == "" {
-		return nil, errors.New("opencode is not installed on this machine, so this session cannot be imported")
+		return nil, errors.New(p.DisplayName() + " is not installed on this machine, so this session cannot be imported")
 	}
 	var raw []byte
 	for _, e := range entries {
@@ -90,7 +86,7 @@ func (Provider) Unpack(r agent.Roots, entries []agent.Entry, targetDir string) (
 		}
 	}
 	if raw == nil {
-		return nil, errors.New("this bundle has no opencode session in it")
+		return nil, fmt.Errorf("this bundle has no %s session in it", p.DisplayName())
 	}
 
 	// A real file, because import takes a path.
@@ -109,15 +105,15 @@ func (Provider) Unpack(r agent.Roots, entries []agent.Entry, targetDir string) (
 	}
 
 	if _, err := runCmdIn(targetDir, bin, "import", tmpPath); err != nil {
-		return nil, fmt.Errorf("opencode import: %w", err)
+		return nil, fmt.Errorf("%s import: %w", p.DisplayName(), err)
 	}
 
 	// Report the id opencode kept, so the receiver can find the session. Import
 	// preserves the session id and only re-homes the project fields.
 	id := sessionIDFrom(raw)
-	hint := "run `opencode` in " + targetDir + " and pick the session"
+	hint := "run `" + p.variant().binary + "` in " + targetDir + " and pick the session"
 	if id != "" {
-		hint = "opencode --session " + id + "   (from " + targetDir + ")"
+		hint = p.variant().binary + " --session " + id + "   (from " + targetDir + ")"
 	}
 	return &agent.Unpacked{SessionID: id, Written: 1, ResumeHint: hint}, nil
 }

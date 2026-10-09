@@ -150,6 +150,8 @@ func TestProviderIDsAreStable(t *testing.T) {
 		{ClaudeCode, "claude-code"},
 		{Codex, "codex"},
 		{OpenCode, "opencode"},
+		{Kilo, "kilo"},
+		{Cline, "cline"},
 	} {
 		if string(c.got) != c.want {
 			t.Errorf("provider ID = %q, want %q (these are a public contract)", c.got, c.want)

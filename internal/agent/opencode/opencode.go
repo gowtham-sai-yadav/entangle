@@ -99,27 +99,57 @@ func execRunnerIn(dir, bin string, args ...string) ([]byte, error) {
 	return out, nil
 }
 
-// Provider is the opencode implementation of agent.Provider.
-type Provider struct{}
+// variant is what differs between opencode and the forks that kept its CLI and
+// storage layout. Kilo Code's CLI is one: same `db`, `export` and `import`
+// commands, same schema, different names. Everything else is shared code.
+type variant struct {
+	id      agent.ID
+	display string
+	binary  string   // executable looked up on PATH
+	dataDir []string // data directory, relative to home
+	dbFile  string   // database file name inside dataDir
+	prefix  string   // bundle prefix, which must be unique per tool
+}
+
+var opencodeVariant = variant{
+	id:      agent.OpenCode,
+	display: "opencode",
+	binary:  "opencode",
+	dataDir: []string{".local", "share", "opencode"},
+	dbFile:  "opencode.db",
+	prefix:  "agents/opencode/",
+}
+
+// Provider is the opencode implementation of agent.Provider. The zero value is
+// opencode itself; a fork is a Provider carrying its own variant.
+type Provider struct{ v *variant }
 
 func init() { agent.Register(Provider{}) }
 
-func (Provider) ID() agent.ID { return agent.OpenCode }
+func (p Provider) variant() variant {
+	if p.v == nil {
+		return opencodeVariant
+	}
+	return *p.v
+}
 
-func (Provider) DisplayName() string { return "opencode" }
+func (p Provider) ID() agent.ID { return p.variant().id }
+
+func (p Provider) DisplayName() string { return p.variant().display }
 
 // Locate finds the opencode binary and its database.
 //
 // Both are required to report present: the database is only readable by asking
 // the binary, so one without the other is not a usable installation. An override
 // names the database directly, for pointing at a copy.
-func (Provider) Locate(override string) (agent.Roots, bool, error) {
+func (p Provider) Locate(override string) (agent.Roots, bool, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return agent.Roots{}, false, err
 	}
-	bin, lookErr := lookPath("opencode")
-	dataDir := filepath.Join(home, ".local", "share", "opencode")
+	v := p.variant()
+	bin, lookErr := lookPath(v.binary)
+	dataDir := filepath.Join(append([]string{home}, v.dataDir...)...)
 	roots := agent.Roots{
 		Home:      home,
 		ConfigDir: dataDir,
@@ -137,7 +167,7 @@ func (Provider) Locate(override string) (agent.Roots, bool, error) {
 	// Fast path: the conventional location, so a presence check is a stat rather
 	// than a process launch. Only when that misses is the binary asked, which
 	// covers channel installs (opencode-dev.db) and an OPENCODE_DB override.
-	db := filepath.Join(dataDir, "opencode.db")
+	db := filepath.Join(dataDir, v.dbFile)
 	if fi, statErr := os.Stat(db); statErr == nil && !fi.IsDir() {
 		roots.Extra[KeyDBPath] = db
 		return roots, true, nil
@@ -179,7 +209,7 @@ type Ref struct {
 }
 
 // ListSessions reads sessions by querying through the opencode binary.
-func (Provider) ListSessions(r agent.Roots) ([]agent.Session, error) {
+func (p Provider) ListSessions(r agent.Roots) ([]agent.Session, error) {
 	bin := r.Get(KeyBinary)
 	if bin == "" {
 		return nil, nil // opencode is not installed; nothing to list
@@ -205,7 +235,7 @@ func (Provider) ListSessions(r agent.Roots) ([]agent.Session, error) {
 			continue
 		}
 		out = append(out, agent.Session{
-			Provider:    agent.OpenCode,
+			Provider:    p.ID(),
 			ID:          row.ID,
 			ShortID:     row.ID, // replaced below by a unique prefix
 			ProjectPath: row.Directory,

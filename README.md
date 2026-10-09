@@ -310,7 +310,7 @@ entangle gui      [bundle] [--port N]
 | `--deep` | Rewrite old paths everywhere in transcripts, not just the `cwd` field. |
 | `--yes` | Skip the confirmation prompt. |
 
-`--tool` takes `claude-code`, `codex`, `opencode`, or `all`. It defaults to `all`, so you rarely need it: `sessions` shows every agent on the machine, and `share`/`send` work out which one an id belongs to. Pass it when you want a listing narrowed to a single tool.
+`--tool` takes `claude-code`, `codex`, `opencode`, `kilo`, `cline`, or `all`. It defaults to `all`, so you rarely need it: `sessions` shows every agent on the machine, and `share`/`send` work out which one an id belongs to. Pass it when you want a listing narrowed to a single tool.
 
 `inspect` shows what is inside a bundle. `verify` checks the sessions already on this machine are resume-ready (Claude Code only, like `export`). `send`/`receive` use the public magic-wormhole servers by default; point them at your own with `--rendezvous`/`--relay` or the `ENTANGLE_RENDEZVOUS`/`ENTANGLE_RELAY` environment variables. `ENTANGLE_NO_UPDATE_CHECK=1` silences the [release check](#updating).
 
@@ -331,7 +331,7 @@ entangle gui      [bundle] [--port N]
 
 **Some sessions are missing from the list.** Sessions recorded inside a temporary directory are hidden, since they are throwaway (some tools run Claude Code from a scratch folder and leave hundreds behind). Set `ENTANGLE_INCLUDE_TEMP=1` to show them.
 
-**Do other coding agents work?** Yes, and you do not have to say so. [OpenAI Codex CLI](https://github.com/openai/codex) and [opencode](https://github.com/anomalyco/opencode) sessions are listed alongside your Claude Code ones by default, and share and send the same way:
+**Do other coding agents work?** Yes, and you do not have to say so. [OpenAI Codex CLI](https://github.com/openai/codex) and [opencode](https://github.com/anomalyco/opencode), [Kilo Code](https://kilo.ai) (its CLI, `kilo`) and [Cline](https://cline.bot) (3.x, CLI and VS Code) sessions are listed alongside your Claude Code ones by default, and share and send the same way:
 
 ```bash
 entangle sessions                   # every tool on this machine

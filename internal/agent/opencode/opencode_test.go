@@ -306,3 +306,40 @@ func TestMsToTime(t *testing.T) {
 		t.Error("a real timestamp should convert")
 	}
 }
+
+// TestKiloIsAVariant: Kilo Code's CLI reuses this implementation, so it must
+// carry its own identity, binary, data directory and bundle prefix - a shared
+// prefix would let one tool's bundle unpack into the other.
+func TestKiloIsAVariant(t *testing.T) {
+	p, ok := agent.Get(agent.Kilo)
+	if !ok {
+		t.Fatal("kilo provider not registered")
+	}
+	if p.DisplayName() != "Kilo Code" {
+		t.Errorf("display name = %q", p.DisplayName())
+	}
+	sh, _ := agent.SharerFor(p)
+	if sh.BundlePrefix() != "agents/kilo/" || sh.BundlePrefix() == (Provider{}).BundlePrefix() {
+		t.Errorf("bundle prefix = %q", sh.BundlePrefix())
+	}
+
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	dataDir := filepath.Join(home, ".local", "share", "kilo")
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	db := filepath.Join(dataDir, "kilo.db")
+	if err := os.WriteFile(db, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var looked string
+	stub(t, "/usr/bin/kilo", nil)
+	old := lookPath
+	lookPath = func(n string) (string, error) { looked = n; return old(n) }
+	r, ok2, err := p.Locate("")
+	if err != nil || !ok2 || r.Get(KeyDBPath) != db || looked != "kilo" {
+		t.Fatalf("locate: ok=%v err=%v db=%q looked=%q", ok2, err, r.Get(KeyDBPath), looked)
+	}
+}
